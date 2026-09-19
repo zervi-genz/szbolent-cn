@@ -26,11 +26,13 @@ jobs:
       - name: Ensure dirs
         run: ssh deploy 'mkdir -p /opt/szbolent-cn /data/pgvector'
 
-      - name: Rsync compose / nginx / scripts
+      - name: Rsync compose / nginx / scripts / mu-plugins / htaccess
         run: |
           rsync -avz docker-compose.yml deploy:/opt/szbolent-cn/
           rsync -avz nginx/ deploy:/opt/szbolent-cn/nginx/
           rsync -avz scripts/ deploy:/opt/szbolent-cn/scripts/
+          rsync -avz mu-plugins/ deploy:/opt/szbolent-cn/mu-plugins/
+          rsync -avz htaccess deploy:/opt/szbolent-cn/htaccess
 
       - name: Write .env (first time only)
         env:
@@ -38,6 +40,7 @@ jobs:
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
           PGVECTOR_PASSWORD: ${{ secrets.PGVECTOR_PASSWORD }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          ICP_LICENSE: ${{ secrets.ICP_LICENSE }}
         run: |
           ssh deploy "cd /opt/szbolent-cn && if [ ! -f .env ]; then
             printf 'MYSQL_ROOT_PASSWORD=%s\nMYSQL_DATABASE=bolent_wp\nMYSQL_USER=wordpress\nMYSQL_PASSWORD=%s\nWP_HOME=http://%s\nWP_SITEURL=http://%s\nPGVECTOR_PASSWORD=%s\n' \
@@ -47,6 +50,17 @@ jobs:
 
       - name: Up stack
         run: ssh deploy 'cd /opt/szbolent-cn && docker compose up -d'
+
+      - name: Apply mu-plugins (ICP footer) + htaccess (幂等)
+        run: |
+          ssh deploy 'if docker ps --format "{{.Names}}" | grep -q "^bolent_wp$"; then
+            docker exec bolent_wp mkdir -p /var/www/html/wp-content/mu-plugins
+            docker cp /opt/szbolent-cn/mu-plugins/. bolent_wp:/var/www/html/wp-content/mu-plugins/
+            docker exec bolent_wp chown -R www-data:www-data /var/www/html/wp-content/mu-plugins
+            docker cp /opt/szbolent-cn/htaccess bolent_wp:/var/www/html/.htaccess
+            docker exec bolent_wp chown www-data:www-data /var/www/html/.htaccess
+            echo "✅ mu-plugins + htaccess 已注入容器";
+          else echo "⏭ bolent_wp 未运行，跳过"; fi'
 
       - name: Retire stale nginx confs (归档旧手写 conf，幂等)
         run: ssh deploy 'bash /opt/szbolent-cn/scripts/retire-stale-confs.sh'
