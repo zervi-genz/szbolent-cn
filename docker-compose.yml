@@ -45,12 +45,15 @@ services:
       WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
       WORDPRESS_DB_NAME: ${MYSQL_DATABASE:-bolent_wp}
       WORDPRESS_TABLE_PREFIX: bolent_
+      ICP_LICENSE: ${ICP_LICENSE:-}
       WORDPRESS_CONFIG_EXTRA: |
         define('WP_HOME','${WP_HOME}');
         define('WP_SITEURL','${WP_SITEURL}');
         define('DISALLOW_FILE_EDIT', true);
     volumes:
       - bolent_wp_data:/var/www/html
+      - ./mu-plugins:/var/www/html/wp-content/mu-plugins
+      - ./htaccess:/var/www/html/.htaccess
     ports:
       - "127.0.0.1:8080:80"
     networks:
