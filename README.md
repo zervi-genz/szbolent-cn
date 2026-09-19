@@ -1,11 +1,11 @@
 # szbolent-cn
 
-> **szbolent.cn 部署栈**（阿里云 `47.115.168.107`）—— 自包含、自主可控。
+> **szbolent.cn 部署栈**（云主机，下称 `<DEPLOY_HOST>`）—— 自包含、自主可控。
 > 按「服务的主体」命名，不按云商命名；**换云商不改仓名**。
 
 ## 定位
 
-本仓**自包含地**声明 `47.115.168.107` 这台机器上的全部服务，与产品仓解耦——
+本仓**自包含地**声明 `<DEPLOY_HOST>` 这台机器上的全部服务，与产品仓解耦——
 `git clone` + CI 部署即可复现整台机器状态，不依赖其他仓、不依赖其他服务器。
 
 | 服务 | 说明 | 归属 |
@@ -18,7 +18,7 @@
 ## 部署（CI 自动化，零手动 SSH）
 
 ```
-push main → GitHub Actions → SSH(Secrets) → 47.115.168.107
+push main → GitHub Actions → SSH(Secrets) → <DEPLOY_HOST>
   → rsync compose/nginx → docker compose up -d → 健康检查
 ```
 
@@ -44,7 +44,7 @@ bash scripts/healthcheck.sh
 
 ## 已知跨机依赖（待解耦）
 
-- 门户 `/v1/` 现反代到 `api.genz.ltd`（腾讯云），属**运行时跨服务器依赖**，见 [`CATALOG.md`](./CATALOG.md)。
+- 门户 `/v1/` 现反代到上游 API（`api.genz.ltd`），属**运行时跨服务器依赖**，见 [`CATALOG.md`](./CATALOG.md)。
 
 ## 目录
 

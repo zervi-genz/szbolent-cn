@@ -1,6 +1,6 @@
 name: Deploy szbolent.cn stack
 
-# push main → CI 自动收敛 47.115.168.107（零手动 SSH）
+# push main → CI 自动收敛目标机（零手动 SSH）；目标机信息全部走 Secrets
 on:
   push:
     branches: [main]
@@ -19,8 +19,8 @@ jobs:
           known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
           config: |
             Host deploy
-              HostName 47.115.168.107
-              User root
+              HostName ${{ secrets.DEPLOY_HOST }}
+              User ${{ secrets.DEPLOY_USER }}
               StrictHostKeyChecking no
 
       - name: Ensure dirs
@@ -37,10 +37,11 @@ jobs:
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
           PGVECTOR_PASSWORD: ${{ secrets.PGVECTOR_PASSWORD }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
         run: |
           ssh deploy "cd /opt/szbolent-cn && if [ ! -f .env ]; then
-            printf 'MYSQL_ROOT_PASSWORD=%s\nMYSQL_DATABASE=bolent_wp\nMYSQL_USER=wordpress\nMYSQL_PASSWORD=%s\nWP_HOME=http://47.115.168.107\nWP_SITEURL=http://47.115.168.107\nPGVECTOR_PASSWORD=%s\n' \
-              '$MYSQL_ROOT_PASSWORD' '$MYSQL_PASSWORD' '$PGVECTOR_PASSWORD' > .env;
+            printf 'MYSQL_ROOT_PASSWORD=%s\nMYSQL_DATABASE=bolent_wp\nMYSQL_USER=wordpress\nMYSQL_PASSWORD=%s\nWP_HOME=http://%s\nWP_SITEURL=http://%s\nPGVECTOR_PASSWORD=%s\n' \
+              '$MYSQL_ROOT_PASSWORD' '$MYSQL_PASSWORD' '$DEPLOY_HOST' '$DEPLOY_HOST' '$PGVECTOR_PASSWORD' > .env;
             echo '✅ .env created';
           else echo '⏭ .env exists, skip'; fi"
 
