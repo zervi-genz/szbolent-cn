@@ -48,6 +48,9 @@ jobs:
       - name: Up stack
         run: ssh deploy 'cd /opt/szbolent-cn && docker compose up -d'
 
+      - name: Retire stale nginx confs (归档旧手写 conf，幂等)
+        run: ssh deploy 'bash /opt/szbolent-cn/scripts/retire-stale-confs.sh'
+
       - name: Apply nginx config + reload
         run: |
           ssh deploy 'cp /opt/szbolent-cn/nginx/szbolent.conf /etc/nginx/conf.d/00-szbolent.conf && nginx -t && systemctl reload nginx || echo "⏭ nginx 跳过"'
